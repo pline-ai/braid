@@ -179,58 +179,58 @@
           :db/cardinality :db.cardinality/one}])
 
        (base/register-server-message-handlers!
-        {:braid.server/create-upload
-         (fn [{:as ev-msg :keys [?data user-id]}]
-           (let [upload (assoc ?data
-                               :uploaded-at (java.util.Date.)
-                               :uploader-id user-id)]
-             (when (and (util/valid? Upload upload)
-                        (let [thread-group-id (thread/thread-group-id (upload :thread-id))]
-                          (or (nil? thread-group-id) (= thread-group-id (upload :group-id))))
-                        (group/user-in-group? user-id (upload :group-id)))
-               (db/run-txns! (db.uploads/create-upload-txn upload)))))
+         {:braid.server/create-upload
+          (fn [{:as ev-msg :keys [?data user-id]}]
+            (let [upload (assoc ?data
+                           :uploaded-at (java.util.Date.)
+                           :uploader-id user-id)]
+              (when (and (util/valid? Upload upload)
+                      (let [thread-group-id (thread/thread-group-id (upload :thread-id))]
+                        (or (nil? thread-group-id) (= thread-group-id (upload :group-id))))
+                      (group/user-in-group? user-id (upload :group-id)))
+                (db/run-txns! (db.uploads/create-upload-txn upload)))))
 
-         :braid.server/delete-upload
-         (fn [{:as ev-msg :keys [?data user-id ?reply-fn]}]
-           (let [upload (db.uploads/upload-info ?data)]
-             (when (or (= user-id (:user-id upload))
-                       (group/user-is-group-admin? user-id (:group-id upload)))
-               (when-let [path (s3/upload-url-path (:url upload))]
-                 (s3/delete-file! config path))
-               (db/run-txns!
-                (db.uploads/retract-upload-txn (:id upload))))))
+          :braid.server/delete-upload
+          (fn [{:as ev-msg :keys [?data user-id ?reply-fn]}]
+            (let [upload (db.uploads/upload-info ?data)]
+              (when (or (= user-id (:user-id upload))
+                        (group/user-is-group-admin? user-id (:group-id upload)))
+                (when-let [path (s3/upload-url-path (:url upload))]
+                  (s3/delete-file! config path))
+                (db/run-txns!
+                  (db.uploads/retract-upload-txn (:id upload))))))
 
-         :braid.server/uploads-in-group
-         (fn [{:as ev-msg :keys [?data user-id ?reply-fn]}]
-           (when ?reply-fn
-             (if (group/user-in-group? user-id ?data)
-               (?reply-fn {:braid/ok (db.uploads/uploads-in-group ?data)})
-               (?reply-fn {:braid/error "Not allowed"}))))})
-
-       (base/register-private-http-route!
-        [:get "/upload/*"
-         (fn [request]
-           ;; TODO check group-id of asset to see if user can access it
-           ;; currently, it is possible for a user in another group to access a file
-           ;; IF they know its path (which, is behind a UUID, so, non-trivial to guess/enumerate)
-           (let [expires-seconds (* 1 24 60 60) ; one day
-                 asset-key (URLDecoder/decode (second (re-matches #"^/upload/(.*)" (request :uri))))]
-             {:status 302
-              :headers {"Cache-Control" (str "private, max-age=" expires-seconds)
-                        "Location" (s3/readable-s3-url config expires-seconds asset-key)}}))])
+          :braid.server/uploads-in-group
+          (fn [{:as ev-msg :keys [?data user-id ?reply-fn]}]
+            (when ?reply-fn
+              (if (group/user-in-group? user-id ?data)
+                (?reply-fn {:braid/ok (db.uploads/uploads-in-group ?data)})
+                (?reply-fn {:braid/error "Not allowed"}))))})
 
        (base/register-private-http-route!
-        [:get "/s3-policy"
-         (fn [req]
-           ;; TODO check if user is allowed to upload to this group
-           (if (user/user-id-exists? (get-in req [:session :user-id]))
-             (if-let [policy (s3/generate-s3-upload-policy config {:starts-with ""})]
-               {:status 200
-                :headers {"Content-Type" "application/edn"}
-                :body (pr-str policy)}
-               {:status 500
-                :headers {"Content-Type" "application/edn"}
-                :body (pr-str {:error "No S3 secret for upload"})})
-             {:status 403
-              :headers {"Content-Type" "application/edn"}
-              :body (pr-str {:error "Unauthorized"})}))]))))
+         [:get "/upload/*"
+          (fn [request]
+            ;; TODO check group-id of asset to see if user can access it
+            ;; currently, it is possible for a user in another group to access a file
+            ;; IF they know its path (which, is behind a UUID, so, non-trivial to guess/enumerate)
+            (let [expires-seconds (* 1 24 60 60) ; one day
+                  asset-key (URLDecoder/decode (second (re-matches #"^/upload/(.*)" (request :uri))))]
+              {:status 302
+               :headers {"Cache-Control" (str "private, max-age=" expires-seconds)
+                         "Location" (s3/readable-s3-url config expires-seconds asset-key)}}))])
+
+       (base/register-private-http-route!
+         [:get "/s3-policy"
+          (fn [req]
+            ;; TODO check if user is allowed to upload to this group
+            (if (user/user-id-exists? (get-in req [:session :user-id]))
+              (if-let [policy (s3/generate-s3-upload-policy config {:starts-with ""})]
+                {:status 200
+                 :headers {"Content-Type" "application/edn"}
+                 :body (pr-str policy)}
+                {:status 500
+                 :headers {"Content-Type" "application/edn"}
+                 :body (pr-str {:error "No S3 secret for upload"})})
+              {:status 403
+               :headers {"Content-Type" "application/edn"}
+               :body (pr-str {:error "Unauthorized"})}))]))))
