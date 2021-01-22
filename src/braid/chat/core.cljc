@@ -30,25 +30,17 @@
        (base/register-db-schema! schema/schema)
        (base/register-db-seed-txns! seed/txns)
        ;; TODO some of these might better belong elsewhere
-       (doseq [k [:api-domain
-                  :asana-client-id
-                  :asana-client-secret
-                  :aws-access-key
-                  :aws-bucket
+       (doseq [k [:aws-bucket
                   :aws-region
-                  :aws-secret-key
                   :aws/credentials-provider
                   :cookie-secure
                   :db-url
-                  :embedly-key
                   :github-client-id
                   :github-client-secret
                   :hmac-secret
                   :http-only
                   :mailgun-domain
                   :mailgun-password
-                  :prod-js
-                  :redis-uri
                   :site-url]]
          (base/register-config-var! k))
 

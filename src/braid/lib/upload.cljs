@@ -1,18 +1,19 @@
 (ns braid.lib.upload
   (:require
-   [clojure.string :as string]))
+   [clojure.string :as string]
+   [goog.object :as o]))
 
 (def regex (delay
              (re-pattern (str "https?://"
-                              (-> (aget js/window "asset_domain")
+                              (-> (o/get js/window "asset_domain")
                                   (string/replace "." "\\."))
                               "/"))))
 
 (defn ->path [url]
-  (string/replace
-   url
-   @regex
-   (str "//" (aget js/window "api_domain") "/upload/")))
+  (some-> url
+          (string/replace
+            @regex
+            (str "//" (o/get js/window "api_domain") "/upload/"))))
 
 (defn upload-path? [url]
-  (string/includes? url (aget js/window "asset_domain")))
+  (string/includes? url (o/get js/window "asset_domain")))
