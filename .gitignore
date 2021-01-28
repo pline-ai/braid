@@ -1,3 +1,4 @@
+/.make.*
 /resources/public/js/
 /target
 .lein-env
