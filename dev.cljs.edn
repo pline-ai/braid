@@ -1,0 +1,8 @@
+{:main braid.core.client.desktop.core
+ :asset-path "/js/dev/desktop/"
+ :output-to "resources/public/js/dev/desktop.js"
+ :output-dir "resources/public/js/dev/desktop/"
+ :optimizations :none
+ :verbose false
+ :closure-defines {"goog.DEBUG" true}
+ :parallel-build true}
