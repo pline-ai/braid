@@ -4,9 +4,11 @@
    [braid.base.api :as base]
    [braid.chat.api :as chat]
    #?@(:clj
-       [[braid.chat.schema :as schema]
+       [[braid.chat.commands :as commands]
+        [braid.chat.schema :as schema]
         [braid.chat.seed :as seed]
-        [braid.chat.server.initial-data :as initial-data]]
+        [braid.chat.server.initial-data :as initial-data]
+        [braid.chat.socket-message-handlers :refer [socket-message-handlers]]]
        :cljs
        [[re-frame.core :refer [dispatch]]
         [braid.chat.client.remote-handlers]
@@ -28,7 +30,7 @@
   #?(:clj
      (do
        (base/register-db-schema! schema/schema)
-       (base/register-db-seed-txns! seed/txns)
+       (base/register-db-seed-fn! seed/seed!)
        ;; TODO some of these might better belong elsewhere
        (doseq [k [:aws-bucket
                   :aws-region
@@ -44,7 +46,13 @@
                   :site-url]]
          (base/register-config-var! k))
 
-       (base/register-initial-user-data! initial-data/initial-data-for-user))
+       (base/register-initial-user-data! initial-data/initial-data-for-user)
+
+       (base/register-server-message-handlers!
+         socket-message-handlers)
+
+       (base/register-commands!
+         commands/commands))
 
      :cljs
      (do
@@ -87,14 +95,6 @@
                      (into {}
                            (map (fn [[g t]] [g (into #{} (map :id) t)]))
                            (group-by :group-id (data :user-threads))))
-              (assoc-in [:user :open-thread-ids]
-                        (set (map :id (data :user-threads))))
-              (assoc :temp-threads (->> (data :user-groups)
-                                        (map :id)
-                                        (reduce (fn [memo group-id]
-                                                  (->> (schema/make-temp-thread group-id)
-                                                       (assoc memo group-id)))
-                                                {})))
               (helpers/add-tags (data :tags))
               (helpers/set-preferences (data :user-preferences)))))
 

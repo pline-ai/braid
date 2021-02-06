@@ -120,6 +120,8 @@
                 [:<> {:key (message :id)}
                  (when (message :show-date-divider?)
                    [:div.divider
+                    (when (:unseen? message)
+                      [:div.border {:style {:background (color/->color @(subscribe [:open-group-id]))}}])
                     [:div.date (date/format-date "yyyy-MM-dd" (message :created-at))]])
                  [message-view (assoc message :thread-id thread-id)]])))])})))
 
@@ -130,12 +132,12 @@
         set-dragging! (fn [bool] (swap! state assoc :dragging? bool))
 
         thread-private? (fn [thread] (and
-                                       (not (thread :new?))
+                                       (seq (thread :messages))
                                        (empty? (thread :tag-ids))
                                        (seq (thread :mentioned-ids))))
 
         thread-limbo? (fn [thread] (and
-                                     (not (thread :new?))
+                                     (seq (thread :messages))
                                      (empty? (thread :tag-ids))
                                      (empty? (thread :mentioned-ids))))
 
@@ -163,15 +165,13 @@
 
     (fn [thread]
       (let [{:keys [dragging? uploading?]} @state
-            new? (thread :new?)
             private? (thread-private? thread)
             limbo? (thread-limbo? thread)
-            archived? (and (not @open?) (not new?))]
+            archived? (not @open?)]
 
         [:div.thread
          {:class
-          (string/join " " [(when new? "new")
-                            (when private? "private")
+          (string/join " " [(when private? "private")
                             (when limbo? "limbo")
                             (when @focused? "focused")
                             (when dragging? "dragging")
@@ -193,7 +193,7 @@
             (when (and (= KeyCodes.ESC (.-keyCode e))
                        (string/blank? (thread :new-message)))
               (helpers/stop-event! e)
-              (dispatch [:hide-thread {:thread-id (thread :id)}])))
+              (dispatch [:hide-thread! {:thread-id (thread :id)}])))
 
           :on-paste
           (fn [e]
@@ -232,8 +232,7 @@
 
           [thread-header-view thread]
 
-          (when-not new?
-            [messages-view (thread :id)])
+          [messages-view (thread :id)]
 
           (when uploading?
             [:div.uploading-indicator "\uf110"])
@@ -245,11 +244,7 @@
              "Join Group to Reply"]
             [new-message-view {:thread-id (thread :id)
                                :group-id (thread :group-id)
-                               :placeholder (if new?
+                               :placeholder (if (empty? (:messages thread))
                                               "Start a conversation..."
                                               "Reply...")
-                               :new-message (thread :new-message)
-                               :mentioned-user-ids (when new?
-                                                     (thread :mentioned-ids))
-                               :mentioned-tag-ids (when new?
-                                                    (thread :tag-ids))}])]]))))
+                               :new-message (thread :new-message)}])]]))))

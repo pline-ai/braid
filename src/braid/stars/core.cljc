@@ -40,7 +40,7 @@
           :view
           (fn [thread]
             (let [starred? @(subscribe [:braid.stars/thread-starred? (thread :id)])]
-              (when-not (thread :new?)
+              (when-not (empty? (:messages thread))
                 [:div.star
                  {:class (if starred?
                            "starred"
@@ -119,8 +119,7 @@
             (dispatch [:braid.stars/unstar-thread! thread-id]))})
 
        (base/register-initial-user-data-handler!
-         (fn
-           [db data]
+         (fn [db data]
            (assoc db :braid.stars/starred-thread-ids
              (data :braid.stars/starred-thread-ids)))))
 

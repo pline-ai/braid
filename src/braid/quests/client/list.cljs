@@ -26,7 +26,7 @@
     :quest/goal 3
     :quest/listener (fn [state [event data]]
                       (and
-                        (= event :new-message)
+                        (= event :new-message!)
                         (->>
                           (get-in state [:threads (data :thread-id) :messages])
                           count
@@ -41,7 +41,7 @@
     :quest/goal 3
     :quest/listener (fn [state [event data]]
                       (and
-                        (= event :new-message)
+                        (= event :new-message!)
                         (->>
                           (get-in state [:threads (data :thread-id) :messages])
                           count
@@ -56,7 +56,7 @@
     :quest/goal 3
     :quest/listener (fn [state [event data]]
                       (and
-                        (= event :hide-thread)
+                        (= event :hide-thread!)
                         (not (data :local-only?))))}])
 
 

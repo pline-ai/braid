@@ -141,12 +141,7 @@
    (doall
      (for [user-id (thread :mentioned-ids)]
        ^{:key user-id}
-       [:<>
-        [user-mention-view user-id]
-        (when (empty? (:messages thread))
-          [:span.remove-mention
-           {:on-click (fn [] (dispatch [:remove-new-thread-mention user-id]))}
-           "x"])]))
+       [user-mention-view user-id]))
    (doall
      (for [tag-id (thread :tag-ids)]
        ^{:key tag-id}
@@ -182,8 +177,6 @@
             :priority 0}])
     [thread-control-dataspec]))
 
-
-
 (defn thread-header-view [thread]
   (into
     [:div.head]
@@ -206,7 +199,7 @@
                         ; divs as controls, otherwise divs higher up also
                         ; get click events
                         (helpers/stop-event! e)
-                        (dispatch [:hide-thread {:thread-id (thread :id)}]))}
+                        (dispatch [:hide-thread! {:thread-id (thread :id)}]))}
            \uf00d]
           [:div.control.unread
            {:title "Mark Unread"
@@ -217,7 +210,7 @@
                         ; divs as controls, otherwise divs higher up also
                         ; get click events
                         (helpers/stop-event! e)
-                        (dispatch [:reopen-thread (thread :id)]))}
+                        (dispatch [:reopen-thread! (thread :id)]))}
            \uf0e2])]
 
        (into [:div.extras]
