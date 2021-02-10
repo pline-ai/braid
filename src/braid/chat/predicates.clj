@@ -38,6 +38,19 @@
 
 ;; OTHER
 
+(defn tag-in-group-with-name-exists?
+  [db group-id tag-name]
+  (->> (d/q '[:find ?tag .
+              :in $ ?group-id ?tag-name
+              :where
+              [?group :group/id ?group-id]
+              [?tag :tag/name ?tag-name]
+              [?tag :tag/group ?group]]
+            db
+            group-id
+            tag-name)
+       boolean))
+
 (defn user-in-group?
   [db user-id group-id]
   (->> (d/q '[:find ?user .
