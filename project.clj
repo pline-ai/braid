@@ -9,6 +9,8 @@
   :clean-targets ^{:protect false}
   ["resources/public/js"]
 
+  :auto-clean false
+
   :middleware [lein-tools-deps.plugin/resolve-dependencies-with-deps-edn]
 
   :lein-tools-deps/config {:config-files [:install :user :project]}
@@ -52,5 +54,7 @@
              :uberjar
              [:prod
               {:aot [braid.core]
+               :dependencies [[com.bhauman/figwheel-main "0.2.12"
+                               :exclusions [org.clojure/clojurescript]]]
                :prep-tasks ["compile"
-                            ["trampoline" "run" "-m" "figwheel.main" "-bo" "prod"]]}]})
+                            ["run" "-m" "figwheel.main" "-bo" "prod"]]}]})
